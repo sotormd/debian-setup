@@ -1,0 +1,339 @@
+{
+	"vars": {
+		"home": "/home/vrm",
+		"git_url": "ssh://rose:/mnt/drive/vrm.git",
+		"kdbx_path": "documents/passwords.kdbx",
+		"git_key_path": "Passwords/Devices/git-crypt - vrm",
+		"git_key_attachment_name": "keyfile",
+		"ssh_key_path": "Passwords/Devices/ssh - noir",
+		"ssh_key_attachment_name": "id_ed25519",
+		"resolution": "1920x1200",
+		"ssid": "myNetwork",
+		"password": "myPassword"
+	},
+	"pre-install": {
+		"git": {
+			"cmds": [
+				{
+					"cmd": "mv <var>home</var> /tmp/vrm"
+				},
+				{
+					"cmd": "git clone <var>git_url</var> <var>home</var>"
+				},
+				{
+					"cmd": "keepassxc-cli attachment-export <var>home</var>/<var>kdbx_path</var> '<var>git_key_path</var>' <var>git_key_attachment_name</var> /tmp/keyfile",
+					"shell": true
+				},
+				{
+					"cmd": "git-crypt unlock /tmp/keyfile",
+					"cwd": "<var>home</var>"
+				},
+				{
+					"cmd": "shred /tmp/keyfile -u"
+				},
+				{
+					"cmd": "keepassxc-cli attachment-export <var>home</var>/<var>kdbx_path</var> '<var>ssh_key_path</var>' <var>ssh_key_attachment_name</var> <var>home</var>/.ssh/id_ed25519",
+					"shell": true
+				},
+				{
+					"cmd": "sudo chmod 700 <var>home</var>/.gnupg"
+				},
+				{
+					"cmd": "sudo chmod -R 600 <var>home</var>/.gnupg/*",
+					"shell": true
+				},
+				{
+					"cmd": "sudo chmod 700 <var>home</var>/.ssh"
+				},
+				{
+					"cmd": "sudo chmod -R 600 <var>home</var>/.ssh/*",
+					"shell": true
+				}
+			]
+		},
+		"nix": {
+			"cmds": [
+				{
+					"cmd": "sudo apt install curl xz-utils"
+				},
+				{
+					"cmd": "curl -L -o nix-install.sh https://nixos.org/nix/install"
+				},
+				{
+					"cmd": "bash nix-install.sh --daemon"
+				},
+				{
+					"cmd": "rm nix-install.sh"
+				}
+			]
+		}
+	},
+	"packages": {
+		"apt": [
+			"apparmor-utils",
+			"blueman",
+			"bpytop",
+			"brightnessctl",
+			"cava",
+			"cups",
+			"curl",
+			"dunst",
+			"easyeffects",
+			"fonts-noto",
+			"foot",
+			"fortune",
+			"gir1.2-playerctl-2.0",
+			"git",
+			"git-crypt",
+			"gnome-keyring",
+			"gparted",
+			"grimshot",
+			"gstreamer1.0-pipewire",
+			"htop",
+			"inkscape",
+			"keepassxc",
+			"libreoffice",
+			"libreoffice-gtk3",
+			"mate-polkit",
+			"micro",
+			"mousepad",
+			"mpv",
+			"nemo",
+			"network-manager",
+			"ntfs-3g",
+			"openssh-client",
+			"pavucontrol",
+			"pipewire-media-session-",
+			"playerctl",
+			"powertop",
+			"pulseaudio",
+			"python3",
+			"python3-i3ipc",
+			"qt5ct",
+			"rig",
+			"seahorse",
+			"slurp",
+			"smartmontools",
+			"sshfs",
+			"supertuxkart",
+			"sway",
+			"swayidle",
+			"swayimg",
+			"swaylock",
+			"systemd-timesyncd",
+			"timeshift",
+			"ufw",
+			"virtualenvwrapper",
+			"waybar",
+			"wget",
+			"wireplumber",
+			"wofi",
+			"xfsprogs"
+		],
+		"nix": [
+			{
+				"channel-setup": {},
+				"channel-name": "nixpkgs",
+				"packages": [
+					"ags",
+					"brave",
+					"cliphist",
+					"fastfetch",
+					"rustup",
+					"swayfx",
+					"vscodium"
+				]
+			},
+			{
+				"channel-setup": {
+					"remote": "https://github.com/nix-community/nixGL/archive/main.tar.gz"
+				},
+				"channel-name": "nixgl",
+				"packages": [
+					"nixGLIntel"
+				]
+			}
+		],
+		"src": [
+			{
+				"remote": "https://github.com/AdnanHodzic/auto-cpufreq",
+				"cmds": [
+					{
+						"cmd": "sudo ./auto-cpufreq-installer",
+						"cwd": "auto-cpufreq"
+					},
+					{
+						"cmd": "rm -rf auto-cpufreq"
+					}
+				]
+			}
+		]
+	},
+	"post-install": {
+		"locale": {
+			"cmds": [
+				{
+					"cmd": "echo 'LANG=C.UTF-8' | sudo tee /etc/default/locale",
+					"shell": true
+				},
+				{
+					"cmd": "echo 'en_US.UTF-8 UTF-8' | sudo tee /etc/locale.gen",
+					"shell": true
+				},
+				{
+					"cmd": "sudo locale-gen"
+				}
+			]
+		},
+		"timedatectl": {
+			"cmds": [
+				{
+					"cmd": "sudo timedatectl set-ntp true"
+				},
+				{
+					"cmd": "sudo timedatectl set-local-rtc false"
+				}
+			]
+		},
+		"grub": {
+			"cmds": [
+				{
+					"cmd": "sudo sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"quiet loglevel=1 rtc_cmos.use_acpi_alarm=1\"/' /etc/default/grub",
+					"shell": true
+				},
+				{
+					"cmd": "sudo sed -i '/^#GRUB_GFXMODE/s/^#//; s/^GRUB_GFXMODE=.*/GRUB_GFXMODE=<var>resolution</var>/' /etc/default/grub",
+					"shell": true
+				},
+				{
+					"cmd": "echo 'RESUME=none' | sudo tee /etc/initramfs-tools/conf.d/resume",
+					"shell": true
+				},
+				{
+					"cmd": "sudo update-grub"
+				},
+				{
+					"cmd": "sudo update-initramfs -u"
+				}
+			]
+		},
+		"ufw": {
+			"cmds": [
+				{
+					"cmd": "sudo ufw enable"
+				}
+			]
+		},
+		"AppArmor": {
+			"cmds": [
+				{
+					"cmd": "sudo systemctl reload apparmor"
+				},
+				{
+					"cmd": "sudo aa-enforce /etc/apparmor.d/*"
+				}
+			]
+		},
+		"NetworkManager": {
+			"cmds": [
+				{
+					"cmd": "echo '' | sudo tee /etc/network/interfaces",
+					"shell": true
+				},
+				{
+					"cmd": "sudo systemctl disable networking --now"
+				},
+				{
+					"cmd": "sudo systemctl enable NetworkManager --now"
+				},
+				{
+					"cmd": "sudo systemctl restart NetworkManager"
+				},
+				{
+					"cmd": "nmcli dev wifi connect <var>ssid</var> password <var>password</var>"
+				},
+				{
+					"cmd": "nmcli con mod <var>ssid</var> wifi-sec.key-mgmt sae"
+				},
+				{
+					"cmd": "nmcli con mod <var>ssid</var> ipv4.dns '1.1.1.1 1.0.0.1'",
+					"shell": true
+				},
+				{
+					"cmd": "nmcli con mod <var>ssid</var> ipv6.method disabled"
+				},
+				{
+					"cmd": "sudo systemctl restart NetworkManager"
+				}
+			]
+		},
+		"bluetooth": {
+			"cmds": [
+				{
+					"cmd": "sudo systemctl disable bluetooth --now"
+				},
+				{
+					"cmd": "sudo sed -i '/^#FastConnectable/s/^#//; s/^FastConnectable.*$/FastConnectable = true/' /etc/bluetooth/main.conf",
+					"shell": true
+				},
+				{
+					"cmd": "sudo sed -i '/^#ReconnectAttempts/s/^#//;' /etc/bluetooth/main.conf",
+					"shell": true
+				},
+				{
+					"cmd": "sudo sed -i '/^#ReconnectIntervals/s/^#//;' /etc/bluetooth/main.conf",
+					"shell": true
+				}
+			]
+		},
+		"auto-cpufreq": {
+			"cmds": [
+				{
+					"cmd": "sudo auto-cpufreq --install"
+				}
+			]
+		},
+		"powertop": {
+			"cmds": [
+				{
+					"cmd": "sudo systemctl enable powertop --now"
+				}
+			]
+		},
+		"cups": {
+			"cmds": [
+				{
+					"cmd": "sudo usermod -aG lpadmin $USER",
+					"shell": true
+				}
+			]
+		},
+		"keyring": {
+			"cmds": [
+				{
+					"cmd": "sudo sed -i '/^@include common-auth/a auth       optional     pam_gnome_keyring.so' /etc/pam.d/login",
+					"shell": true
+				},
+				{
+					"cmd": "sudo sed -i '/^@include common-session/a session    optional     pam_gnome_keyring.so auto_start' /etc/pam.d/login",
+					"shell": true
+				}
+			]
+		},
+		"root-account": {
+			"cmds": [
+				{
+					"cmd": "sudo usermod -s /usr/sbin/nologin root"
+				}
+			]
+		},
+		"rust": {
+			"cmds": [
+				{
+					"cmd": "bash -c \"source /etc/profile && rustup default stable\"",
+					"shell": true
+				}
+			]
+		}
+	}
+}
